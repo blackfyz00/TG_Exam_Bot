@@ -231,3 +231,42 @@ def callback_query_main(call):
                               message_id=call.message.message_id,
                               text='Вы успешно записались на экзамен!',
                               reply_markup=keyboard_record7)
+
+    def handle_password(message, info):
+        user_password = message.text
+        if user_password == sudo_password and info == 'queue':
+            exten.change_exam_list_for_groups(action='removeall_queues')
+            keyboard_foradmins3 = InlineKeyboardMarkup()
+            keyboard_foradmins3.row(InlineKeyboardButton('Домой', callback_data='start'))
+            bot.send_message(chat_id=message.chat.id,
+                             text="Пароль верный. Все очереди удалены.",
+                             reply_markup=keyboard_foradmins3)
+            return
+
+        else:
+            keyboard_clean_home = InlineKeyboardMarkup()
+            keyboard_clean_home.row(InlineKeyboardButton("Домой", callback_data='start'))
+            bot.send_message(chat_id=message.chat.id,
+                             text='Пароль неверный. Попробуйте снова.',
+                             reply_markup=keyboard_clean_home)
+
+    def input_subject_time(message, info, time):
+        mes = message.text
+        mes = mes.replace(time, "")
+        if exten.contains_letter(time) == False and exten.contains_letter(mes) == True:
+            info.append(mes)
+            info.append(time)
+            exten.add_queue_group(info)
+            keyboard_add_queue = InlineKeyboardMarkup()
+            keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
+            bot.send_message(chat_id=message.chat.id,
+                             text='Вы успешно добавили новую очередь!',
+                             reply_markup=keyboard_add_queue)
+        else:
+            keyboard_add_queue = InlineKeyboardMarkup()
+            keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
+            bot.send_message(chat_id=message.chat.id,
+                             text='Время экзамена указано неверно. Повторите попытку записи очереди.',
+                             reply_markup=keyboard_add_queue)
+
+    bot.polling()
