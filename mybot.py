@@ -156,3 +156,78 @@ def callback_query_main(call):
                                 message_id=call.message.message_id, 
                                 text=f"Подтвердите сброс очереди {users[user_id][1]}: {users[user_id][2]}", 
                                 reply_markup=keyboard_foradmins2)
+    if call.data.startswith('remove_groupqueue_reset'):
+        exten.change_exam_list_for_groups(action='remove',
+                                          group=users[user_id][0],
+                                          exam=users[user_id][1],
+                                          time=users[user_id][2])
+        keyboard_foradmins5 = InlineKeyboardMarkup()
+        keyboard_foradmins5.row(InlineKeyboardButton('Домой', callback_data='start'))
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id,
+                              text="Очередь успешно сброшена",
+                              reply_markup=keyboard_foradmins5)
+
+    if call.data.startswith('teach_watch_group'):
+        substring = call.data[len("teach_watch_group_"):]
+        list_students_exam = exten.watch_students(group=users[user_id][0], exam=substring)
+        keyboard_record21 = InlineKeyboardMarkup()
+        keyboard_record21.row(InlineKeyboardButton("Домой", callback_data='start'))
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id,
+                              text=f'Конечно! Вот список записанных по времени на экзамен:\n\n{list_students_exam}',
+                              reply_markup=keyboard_record21)
+
+    if call.data.startswith('exam_rec'):
+        substring = call.data[len("exam_rec_"):]
+        users[user_id].append(substring)
+        keyboard_record3 = exten.create_object_from_db(to_return='keyboard',
+                                                       column_name='Экзамен',
+                                                       callback='exam_time_rec',
+                                                       group=users[user_id][0])
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id,
+                              text=f"Вы выбрали группу {users[user_id][0]}. Выберите на какой экзамен записаться:",
+                              reply_markup=keyboard_record3)
+
+    if call.data.startswith('exam_time_rec'):
+        substring = call.data[len("exam_time_rec_"):]
+        users[user_id].append(substring)
+        keyboard_record4 = exten.create_object_from_db(to_return='keyboard',
+                                                       column_name='Время',
+                                                       exam=users[user_id][1],
+                                                       callback='name_rec', group=users[user_id][0])
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id,
+                              text=f"Вы выбрали экзамен {users[user_id][1]}. Выберите время записи:",
+                              reply_markup=keyboard_record4)
+
+    if call.data.startswith('name_rec'):
+        substring = call.data[len("name_rec_"):]
+        users[user_id].append(substring)
+        students = exten.get_students(users[user_id][0])
+        keyboard_record5 = exten.create_keyboard_from_list(students, callback='prepare_to_record')
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id,
+                              text=f"Вы выбрали время {users[user_id][2]}. Выберите студента, для записи на экзамен:",
+                              reply_markup=keyboard_record5)
+
+    if call.data.startswith('prepare_to_record'):
+        substring = call.data[len("prepare_to_record_"):]
+        users[user_id].append(substring)
+        keyboard_record6 = InlineKeyboardMarkup()
+        keyboard_record6.row(InlineKeyboardButton("Подтвердить", callback_data='record_to_final_list'))
+        keyboard_record6.row(InlineKeyboardButton("Отмена", callback_data='start'))
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id,
+                              text=f"Студент {users[user_id][3]} будет записан на экзамен. \nПодтвердите ввод в базу данных.",
+                              reply_markup=keyboard_record6)
+
+    if call.data == 'record_to_final_list':
+        exten.final_record(users[user_id])
+        keyboard_record7 = InlineKeyboardMarkup()
+        keyboard_record7.row(InlineKeyboardButton("Домой", callback_data='start'))
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id,
+                              text='Вы успешно записались на экзамен!',
+                              reply_markup=keyboard_record7)
