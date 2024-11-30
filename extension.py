@@ -107,8 +107,7 @@ def final_record(user):
 
     # Объединяем существующий DataFrame с новым
     user = pd.DataFrame([user], columns=['Группа', 'Экзамен', 'Время', 'ФИО'])
-    combined_df = pd.concat([df, user], ignore_index=True).drop_duplicates(subset='ФИО', keep='last').reset_index(
-        drop=True)
+    combined_df = pd.concat([df, user], ignore_index=True).reset_index(drop=True)
     # Удаляем дубликаты, оставляя последнее вхождение
     combined_df = combined_df.drop_duplicates(keep='last')
     combined_df.to_excel(path, index=False)
@@ -118,7 +117,7 @@ def watch_students(group, exam):
     path = os.path.join(os.path.dirname(sys.argv[0]), 'final_record', f'{group}.xlsx')
     try:
         df = pd.read_excel(path)
-        df = df.query(f"Экзамен == '{exam}'").sort_values(by='ФИО')
+        df = df.query(f"Экзамен == '{exam}'").sort_values(by=['Время', 'ФИО'])
         is_df_empy = df.empty
         df = df.to_string(index=False)
         if is_df_empy == True:
