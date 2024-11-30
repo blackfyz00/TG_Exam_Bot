@@ -153,3 +153,34 @@ def change_exam_list_for_groups(action, group=None, exam=None, time=None):
         for filename in os.listdir(andpath):
             file_path = os.path.join(andpath, filename)
             os.unlink(file_path)
+            
+def clean_alldata():
+    path = os.path.join(os.path.dirname(sys.argv[0]), 'final_record')
+    for filename in os.listdir(path):
+            file_path = os.path.join(path, filename)
+            try:
+                os.unlink(file_path)
+            except Exception as e:
+                print(f"Не удалось удалить {file_path}. Причина: {e}")
+                
+def add_queue_group(groupex_andtime):
+    path = os.path.join(os.path.dirname(sys.argv[0]), 'db_groups', f'{groupex_andtime[0]}db.xlsx')
+    groupex_andtime = groupex_andtime[:3]
+    if(len(groupex_andtime)==3):
+        try:
+            df = pd.read_excel(path)
+            new_row = {'Экзамен': f'{groupex_andtime[1]}', 'Время': f'{groupex_andtime[2]}'}
+            df.loc[len(df)] = new_row
+            df.to_excel(path, index=False)
+
+        except FileNotFoundError:
+            columns = ['Экзамен', 'Время']
+            df = pd.DataFrame(columns=columns)
+            df.to_excel(path, index=False)
+            add_queue_group(groupex_andtime)
+
+    else:
+        return
+    
+def contains_letter(s):
+    return any(char.isalpha() for char in s)
