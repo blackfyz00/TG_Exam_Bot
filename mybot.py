@@ -2,6 +2,7 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import config
 import extension as exten
+
 bot = telebot.TeleBot(config.token)
 users = {}
 sudo_password = "IMADMIN"
@@ -119,9 +120,11 @@ def callback_query_main(call):
         keyboard_foradmins2.row(InlineKeyboardButton('Домой', callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
-                                text="Введите название предмета и время через пробел, например: Алгебра 14:00", 
+                                text="Введите название предмета, дату и время через пробел, например: Алгебра 13.01.24 14:00 ", 
                                 reply_markup=keyboard_foradmins2)
-        bot.register_next_step_handler(call.message, lambda msg: input_subject_time(msg, info=users[user_id], time=msg.text.split()[-1]))
+        bot.register_next_step_handler(call.message, lambda msg: 
+                                       input_subject_time
+                                        (msg, info=users[user_id], date=msg.text.split()[-2], time = msg.text.split()[-1]))
 
     if call.data.startswith('remove_queue'):
         keyboard_rqueue = exten.create_keyboard_from_dir(dirname='db_groups', 
@@ -250,12 +253,13 @@ def callback_query_main(call):
                              text='Пароль неверный. Попробуйте снова.',
                              reply_markup=keyboard_clean_home)
 
-    def input_subject_time(message, info, time):
+    def input_subject_time(message, info, time, date):
         mes = message.text
-        mes = mes.replace(time, "")
-        if exten.contains_letter(time) == False and exten.contains_letter(mes) == True:
+        dt = date + " " + time
+        mes = mes.replace(dt, "").strip()
+        if exten.contains_letter(time) == False and exten.contains_letter(date) == False and exten.contains_letter(mes) == True:
             info.append(mes)
-            info.append(time)
+            info.append(dt)
             exten.add_queue_group(info)
             keyboard_add_queue = InlineKeyboardMarkup()
             keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
@@ -266,7 +270,7 @@ def callback_query_main(call):
             keyboard_add_queue = InlineKeyboardMarkup()
             keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
             bot.send_message(chat_id=message.chat.id,
-                             text='Время экзамена указано неверно. Повторите попытку записи очереди.',
+                             text='Время или дата экзамена указано неверно. Повторите попытку записи очереди.',
                              reply_markup=keyboard_add_queue)
 
-    bot.polling()
+bot.polling()
