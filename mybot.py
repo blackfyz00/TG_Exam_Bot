@@ -277,7 +277,7 @@ def input_subject_time(message, info, time, date):
         keyboard_add_queue = InlineKeyboardMarkup()
         keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
         bot.send_message(chat_id=message.chat.id,
-                            text='Время или дата экзамена указано неверно. Повторите попытку записи очереди.',
+                            text='Неверный формат ввода данных. Повторите попытку записи очереди.',
                             reply_markup=keyboard_add_queue)
 
 bot.polling()
