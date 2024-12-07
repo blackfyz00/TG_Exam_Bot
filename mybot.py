@@ -2,6 +2,7 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import config
 import extension as exten
+import re
 
 bot = telebot.TeleBot(config.token)
 users = {}
@@ -149,17 +150,21 @@ def callback_query_main(call):
     if call.data.startswith('remove_Ygroupqueue'):
         substring = call.data[len("remove_Ygroupqueue_"):]
         substring = substring.split('_')
-        for item in substring:
-            users[user_id].append(item)
+
+        users[user_id].append(substring[0])
+        combined_element = ' '.join(substring[1:])
+        users[user_id].append(combined_element)
+        
         keyboard_foradmins2 = InlineKeyboardMarkup()
         keyboard_foradmins2.row(InlineKeyboardButton("Подтвердить", 
-                                                     callback_data='remove_groupqueue_reset'))
+                                                     callback_data='resetone_groupqueue'))
         keyboard_foradmins2.row(InlineKeyboardButton('Домой', callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
                                 text=f"Подтвердите сброс очереди {users[user_id][1]}: {users[user_id][2]}", 
                                 reply_markup=keyboard_foradmins2)
-    if call.data.startswith('remove_groupqueue_reset'):
+        
+    if call.data.startswith('resetone_groupqueue'):
         exten.change_exam_list_for_groups(action='remove',
                                           group=users[user_id][0],
                                           exam=users[user_id][1],
@@ -254,10 +259,13 @@ def callback_query_main(call):
                              reply_markup=keyboard_clean_home)
 
     def input_subject_time(message, info, time, date):
+        time_pattern = r'^\d{2}:\d{2}$'
+        date_pattern = r'^\d{2}\.\d{2}\.\d{2}$'
+
         mes = message.text
         dt = date + " " + time
         mes = mes.replace(dt, "").strip()
-        if exten.contains_letter(time) == False and exten.contains_letter(date) == False and exten.contains_letter(mes) == True:
+        if re.match(time_pattern, time) and re.match(date_pattern, date) and exten.contains_digits(mes) != True:
             info.append(mes)
             info.append(dt)
             exten.add_queue_group(info)

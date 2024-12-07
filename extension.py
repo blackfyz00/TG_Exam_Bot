@@ -1,20 +1,19 @@
 import pandas as pd
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import os, sys
-
+import re
 
 def create_object_from_db(to_return, callback, group, column_name=None, exam=None):
     try:
         path = os.path.join(os.path.dirname(sys.argv[0]), 'db_groups', f'{group}db.xlsx')
-        df = pd.read_excel(path).sort_values(by=['Экзамен', 'Время'])
+        df = pd.read_excel(path)
 
         if (to_return == 'keyboard' and column_name == 'Время'):
             list = df[column_name].drop_duplicates().tolist()
             list = df.query(f"Экзамен == '{exam}'")
             keyboard = InlineKeyboardMarkup()
             for option in list.itertuples(index=False, name=None):
-                keyboard.row(InlineKeyboardButton(str(option[1]),
-                                                  callback_data=callback + '_' + str(option[1])))
+                keyboard.row(InlineKeyboardButton(str(option[1]), callback_data=str(callback) + '_' + str(option[1])))
             keyboard.row(InlineKeyboardButton('Домой', callback_data='start'))
             return keyboard
 
@@ -23,13 +22,13 @@ def create_object_from_db(to_return, callback, group, column_name=None, exam=Non
             keyboard = InlineKeyboardMarkup()
             for option in list.itertuples(index=False, name=None):
                 keyboard.row(InlineKeyboardButton(str(option[0]),
-                                                  callback_data=callback + '_' + str(option[0])))
+                                                  callback_data=str(callback) + '_' + str(option[0])))
             keyboard.row(InlineKeyboardButton('Домой', callback_data='start'))
             return keyboard
 
         if (to_return == 'keyboard'):
             keyboard = InlineKeyboardMarkup()
-            exam_time_list = df[['Экзамен', 'Время']].values.tolist()
+            exam_time_list = df.values.tolist()
             for exam, time in exam_time_list:
                 keyboard.row(InlineKeyboardButton(f"{exam}: {time}",
                                                   callback_data=callback + '_' + f"{exam}_{time}"))
@@ -52,17 +51,13 @@ def create_object_from_db(to_return, callback, group, column_name=None, exam=Non
         keyboard.row(InlineKeyboardButton('Домой', callback_data='start'))
         return keyboard
 
-
 def create_keyboard_from_dir(dirname, callback):
     path = os.path.join(os.path.dirname(sys.argv[0]), f'{dirname}')
     keyboard = InlineKeyboardMarkup()
 
-    if ('db' in path):
-        list = []
-        for filename in os.listdir(path):
-            filename = os.path.splitext(filename)[0]
-            filename = filename[:-2]
-            list.append(filename)
+    if ('db' in dirname):
+        list = [os.path.splitext(filename)[0][:-2] for filename in os.listdir(path)
+                if os.path.isfile(os.path.join(path, filename))]
         for option in list:
             keyboard.row(InlineKeyboardButton(option, callback_data=callback + '_' + option))
         keyboard.row(InlineKeyboardButton('Домой', callback_data='start'))
@@ -133,13 +128,16 @@ def change_exam_list_for_groups(action, group=None, exam=None, time=None):
     andpath = os.path.join(os.path.dirname(sys.argv[0]), 'final_record', f'{group}.xlsx')
 
     if (action == 'remove'):
-        df = pd.read_excel(path).astype(str).sort_values(by=['Экзамен', 'Время'])
+        df = pd.read_excel(path)
         condition = (df['Экзамен'] == f'{exam}') & (df['Время'] == f'{time}')
         # Удаление строки, удовлетворяющей условию
-        df = df.drop(df[condition].index).to_excel(path, index=False)
+        df = df.drop(df[condition].index)
+        df.to_excel(path, index=False)
         try:
-            anddf = pd.read_excel(andpath).astype(str).sort_values(by=['Экзамен', 'Время'])
-            anddf = anddf.drop(anddf[condition].index).to_excel(andpath, index=False)
+            anddf = pd.read_excel(andpath)
+            condition = (anddf['Экзамен'] == f'{exam}') & (anddf['Время'] == f'{time}')
+            anddf = anddf.drop(anddf[condition].index)
+            anddf.to_excel(andpath, index=False)
         except FileNotFoundError:
             return
 
@@ -170,6 +168,7 @@ def add_queue_group(groupex_andtime):
             df = pd.read_excel(path)
             new_row = {'Экзамен': f'{groupex_andtime[1]}', 'Время': f'{groupex_andtime[2]}'}
             df.loc[len(df)] = new_row
+            df.drop_duplicates(keep='last', inplace=True)
             df.to_excel(path, index=False)
 
         except FileNotFoundError:
@@ -181,5 +180,5 @@ def add_queue_group(groupex_andtime):
     else:
         return
     
-def contains_letter(s):
-    return any(char.isalpha() for char in s)
+def contains_digits(s):
+    return bool(re.search(r'\d', s))
