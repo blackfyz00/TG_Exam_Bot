@@ -98,7 +98,6 @@ def callback_query_main(call):
 
     if call.data.startswith('rsudo_all_queue'):
         keyboard_foradmins2 = InlineKeyboardMarkup()
-        keyboard_foradmins2.row(InlineKeyboardButton('Домой', callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
                                 text=f"Введите пароль", 
