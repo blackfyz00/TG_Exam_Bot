@@ -6,7 +6,6 @@ import re
 
 bot = telebot.TeleBot(config.token)
 users = {}
-sudo_password = "IMADMIN"
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -117,14 +116,13 @@ def callback_query_main(call):
         substring = call.data[len("add_group_inqueue_"):]
         users[user_id].append(substring)
         keyboard_foradmins2 = InlineKeyboardMarkup()
-        keyboard_foradmins2.row(InlineKeyboardButton('Домой', callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
-                                text="Введите название предмета, дату и время через пробел, например: Алгебра 13.01.24 14:00 ", 
+                                text="Введите название предмета, дату и время через пробел, например: Алгебра 13.01.24 14:00", 
                                 reply_markup=keyboard_foradmins2)
-        bot.register_next_step_handler(call.message, lambda msg: 
-                                       input_subject_time
-                                        (msg, info=users[user_id], date=msg.text.split()[-2], time = msg.text.split()[-1]))
+
+        bot.register_next_step_handler(call.message, 
+                        lambda msg: input_subject_time (msg, info=users[user_id]))
 
     if call.data.startswith('remove_queue'):
         keyboard_rqueue = exten.create_keyboard_from_dir(dirname='db_groups', 
@@ -241,7 +239,7 @@ def callback_query_main(call):
 
 def handle_password(message, info):
     user_password = message.text
-    if user_password == sudo_password and info == 'queue':
+    if user_password == config.sudo_password and info == 'queue':
         exten.change_exam_list_for_groups(action='removeall_queues')
         keyboard_foradmins3 = InlineKeyboardMarkup()
         keyboard_foradmins3.row(InlineKeyboardButton('Домой', callback_data='start'))
@@ -257,13 +255,23 @@ def handle_password(message, info):
                             text='Пароль неверный. Попробуйте снова.',
                             reply_markup=keyboard_clean_home)
 
-def input_subject_time(message, info, time, date):
+def input_subject_time(message, info):
     time_pattern = r'^\d{2}:\d{2}$'
-    date_pattern = r'^\d{2}\.\d{2}\.\d{2}$'
+    date_pattern = r'^\d{2}\.\d{2}.\d{2}$'
 
-    mes = message.text
+    if(len(message.text.split()) < 3 or len(str(info).encode('utf-8')) + len(message.text.encode('utf-8')) > 64):
+        keyboard_add_queue = InlineKeyboardMarkup()
+        keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
+        bot.send_message(chat_id=message.chat.id,
+                            text='Неверный формат очереди. Повторите попытку снова.',
+                            reply_markup=keyboard_add_queue)
+        return
+    
+    date=message.text.split()[-2]
+    time = message.text.split()[-1]
     dt = date + " " + time
-    mes = mes.replace(dt, "").strip()
+    mes = message.text.replace(dt, "").strip()
+
     if re.match(time_pattern, time) and re.match(date_pattern, date) and exten.contains_digits(mes) != True:
         info.append(mes)
         info.append(dt)

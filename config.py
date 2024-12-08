@@ -1,3 +1,3 @@
-token = '7295156738:AAF2fWcn8-5aZNKsXl5na_yg09y6QSQ3D4s'
-username = '@blackfyz_bot'
+token = '7768244289:AAFUw576HxLVrPW-0hnx4Prd0uW2HDlvrb4'
 init_message = 'Здравствуйте! Я помогу Вам записаться на экзамен, редактировать очереди и посмотреть списки.'
+sudo_password = "IMADMIN"
